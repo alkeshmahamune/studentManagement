@@ -1,54 +1,87 @@
-import Database from 'better-sqlite3'
+import initSqlJs from 'sql.js'
+import fs from 'fs'
 import { config } from './config.js'
 
-const db = new Database(config.dbPath)
+let db = null
 
-// Enable foreign keys
-db.pragma('journal_mode = WAL')
+const initDB = async () => {
+    const SQL = await initSqlJs()
+    
+    // Try to load existing database from file
+    let data
+    try {
+        data = fs.readFileSync(config.dbPath)
+        db = new SQL.Database(data)
+    } catch (err) {
+        // Create new database if file doesn't exist
+        db = new SQL.Database()
+    }
+    
+    // Create Schools table if it doesn't exist
+    db.run(`
+        CREATE TABLE IF NOT EXISTS Schools (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            address TEXT NOT NULL,
+            latitude REAL NOT NULL,
+            longitude REAL NOT NULL,
+            createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `)
+    
+    saveDB()
+    console.log('SQLite database initialized')
+    return db
+}
 
-// Create Schools table if it doesn't exist
-db.exec(`
-    CREATE TABLE IF NOT EXISTS Schools (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        address TEXT NOT NULL,
-        latitude REAL NOT NULL,
-        longitude REAL NOT NULL,
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-`)
+const saveDB = () => {
+    const data = db.export()
+    const buffer = Buffer.from(data)
+    fs.writeFileSync(config.dbPath, buffer)
+}
 
-console.log('SQLite database connected')
-
-// Wrapper for async compatibility
+// Async wrapper for compatibility
 const dbAsync = {
-    run: (sql, params = []) => {
+    run: async (sql, params = []) => {
         try {
-            const stmt = db.prepare(sql)
-            const info = stmt.run(...params)
-            return Promise.resolve({ id: info.lastInsertRowid, changes: info.changes })
+            db.run(sql, params)
+            saveDB()
+            // Return lastID for INSERT operations
+            const result = db.exec('SELECT last_insert_rowid() as id')
+            const lastID = result.length > 0 ? result[0].values[0][0] : null
+            return { id: lastID, changes: 1 }
         } catch (err) {
-            return Promise.reject(err)
+            throw err
         }
     },
-    all: (sql, params = []) => {
+    all: async (sql, params = []) => {
         try {
             const stmt = db.prepare(sql)
-            const rows = stmt.all(...params)
-            return Promise.resolve(rows || [])
+            stmt.bind(params)
+            const rows = []
+            while (stmt.step()) {
+                rows.push(stmt.getAsObject())
+            }
+            stmt.free()
+            return rows || []
         } catch (err) {
-            return Promise.reject(err)
+            throw err
         }
     },
-    get: (sql, params = []) => {
+    get: async (sql, params = []) => {
         try {
             const stmt = db.prepare(sql)
-            const row = stmt.get(...params)
-            return Promise.resolve(row)
+            stmt.bind(params)
+            let row = null
+            if (stmt.step()) {
+                row = stmt.getAsObject()
+            }
+            stmt.free()
+            return row
         } catch (err) {
-            return Promise.reject(err)
+            throw err
         }
     }
 }
 
-export default dbAsync
+export { initDB, dbAsync as default }

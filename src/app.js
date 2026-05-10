@@ -2,6 +2,7 @@ import express from 'express'
 import { config } from './config/config.js'
 import cors from 'cors'
 import schoolRouter from './router/school.router.js'
+import { initDB } from './config/db.js'
 
 // variable calling the express package 
 const app = express()
@@ -21,7 +22,17 @@ app.get("/", (req, res) => {
   res.send("School Management API Running");
 });
 
-//server 
-app.listen(PORT,()=>{
-    console.log('SERVER IS UP AND RUNNING...'+PORT)
-})
+// Initialize database and start server
+const startServer = async () => {
+  try {
+    await initDB()
+    app.listen(PORT, () => {
+      console.log('SERVER IS UP AND RUNNING ON PORT ' + PORT)
+    })
+  } catch (err) {
+    console.error('Failed to start server:', err)
+    process.exit(1)
+  }
+}
+
+startServer()
