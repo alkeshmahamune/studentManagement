@@ -6,7 +6,7 @@ const router=express.Router()
 // router for add school 
 router.post('/addSchool',addSchool)
 
-// router for listing schools 
+// router for listing Schools 
 router.get('/listSchools',listSchools)
 
 export default router

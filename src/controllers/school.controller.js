@@ -22,7 +22,7 @@ export const addSchool=(req,res)=>{
     }
 
     //query for adding the data
-    const query="INSERT INTO schools (name,address,latitude,longitude) VALUES (?,?,?,?)"
+    const query="INSERT INTO Schools (name,address,latitude,longitude) VALUES (?,?,?,?)"
 
     db.query(
         query,
@@ -44,7 +44,7 @@ export const addSchool=(req,res)=>{
     )
 }
 
-// api for listing the schools 
+// api for listing the Schools 
 export const listSchools=(req,res)=>{
     const {latitude,longitude}=req.query;
     if(!latitude || !longitude){
@@ -53,7 +53,7 @@ export const listSchools=(req,res)=>{
             message:"User longitude and latitude required"
         })
     }
-    db.query("SELECT * FROM schools",(err,result)=>{
+    db.query("SELECT * FROM Schools",(err,result)=>{
         if(err){
             return res.status(500).json({
                 success:false,
