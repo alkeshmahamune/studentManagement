@@ -1,16 +1,13 @@
-import sqlite3 from 'sqlite3'
+import Database from 'better-sqlite3'
 import { config } from './config.js'
 
-const db = new sqlite3.Database(config.dbPath, (err) => {
-    if (err) {
-        console.error('Database connection failed:', err.message)
-    } else {
-        console.log('SQLite database connected')
-    }
-})
+const db = new Database(config.dbPath)
+
+// Enable foreign keys
+db.pragma('journal_mode = WAL')
 
 // Create Schools table if it doesn't exist
-db.run(`
+db.exec(`
     CREATE TABLE IF NOT EXISTS Schools (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
@@ -21,31 +18,36 @@ db.run(`
     )
 `)
 
-// Promisify database methods
+console.log('SQLite database connected')
+
+// Wrapper for async compatibility
 const dbAsync = {
     run: (sql, params = []) => {
-        return new Promise((resolve, reject) => {
-            db.run(sql, params, function(err) {
-                if (err) reject(err)
-                else resolve({ id: this.lastID, changes: this.changes })
-            })
-        })
+        try {
+            const stmt = db.prepare(sql)
+            const info = stmt.run(...params)
+            return Promise.resolve({ id: info.lastInsertRowid, changes: info.changes })
+        } catch (err) {
+            return Promise.reject(err)
+        }
     },
     all: (sql, params = []) => {
-        return new Promise((resolve, reject) => {
-            db.all(sql, params, (err, rows) => {
-                if (err) reject(err)
-                else resolve(rows || [])
-            })
-        })
+        try {
+            const stmt = db.prepare(sql)
+            const rows = stmt.all(...params)
+            return Promise.resolve(rows || [])
+        } catch (err) {
+            return Promise.reject(err)
+        }
     },
     get: (sql, params = []) => {
-        return new Promise((resolve, reject) => {
-            db.get(sql, params, (err, row) => {
-                if (err) reject(err)
-                else resolve(row)
-            })
-        })
+        try {
+            const stmt = db.prepare(sql)
+            const row = stmt.get(...params)
+            return Promise.resolve(row)
+        } catch (err) {
+            return Promise.reject(err)
+        }
     }
 }
 
