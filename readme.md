@@ -12,7 +12,7 @@ Live API
 https://school-management-api-lm8j.onrender.com
 
 GitHub Repository
-https://github.com/YOUR_USERNAME/school-management-api
+https://github.com/alkeshmahamune/studentManagement.git
 
 Features
 Add School API
@@ -91,7 +91,7 @@ GET /listSchools?latitude=18.5204&longitude=73.8567
 
 Installation & Setup
 Clone Repository
-git clone https://github.com/YOUR_USERNAME/school-management-api.git
+git clone https://github.com/alkeshmahamune/studentManagement.git
 
 Navigate to Project
 cd school-management-api
@@ -149,4 +149,4 @@ Backend Developer | MERN Stack Developer
 
 GitHub:
 
-https://github.com/YOUR_USERNAME
+https://github.com/alkeshmahamune
