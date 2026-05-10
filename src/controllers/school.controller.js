@@ -23,14 +23,14 @@ export const addSchool = async (req, res) => {
         }
 
         //query for adding the data
-        const query = "INSERT INTO Schools (name,address,latitude,longitude) VALUES (?,?,?,?)"
+        const query = "INSERT INTO Schools (name, address, latitude, longitude) VALUES (?, ?, ?, ?)"
 
-        const [result] = await db.query(query, [name, address, latitude, longitude])
+        const result = await db.run(query, [name, address, latitude, longitude])
 
         res.status(201).json({
             success: true,
             message: "School added successfully",
-            data: result
+            data: { id: result.id, name, address, latitude, longitude }
         })
     } catch (err) {
         res.status(500).json({
@@ -51,7 +51,7 @@ export const listSchools = async (req, res) => {
             })
         }
 
-        const [result] = await db.query("SELECT * FROM Schools")
+        const result = await db.all("SELECT * FROM Schools")
 
         const userLat = parseFloat(latitude)
         const userLon = parseFloat(longitude)
